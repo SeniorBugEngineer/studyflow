@@ -1,0 +1,2351 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>StudyFlow - 學生專注學習助手</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Arial, "Microsoft JhengHei", sans-serif;
+            background: #f3f6fb;
+            color: #1f2937;
+            padding: 30px 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        /* =========================
+           標題
+        ========================= */
+
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .header h1 {
+            margin: 0;
+            color: #2563eb;
+            font-size: 38px;
+        }
+
+        .header p {
+            margin-top: 8px;
+            color: #64748b;
+        }
+
+        /* =========================
+           共用卡片
+        ========================= */
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        }
+
+        /* =========================
+           計時器
+        ========================= */
+
+        .timer-card {
+            padding: 40px 30px;
+            text-align: center;
+        }
+
+        .mode {
+            display: inline-block;
+            background: #dbeafe;
+            color: #2563eb;
+            padding: 8px 18px;
+            border-radius: 30px;
+            font-weight: bold;
+            margin-bottom: 25px;
+
+            transition:
+                background-color 0.3s,
+                color 0.3s;
+        }
+
+        /* 專注 / 休息 切換 */
+
+        .mode-switch {
+            display: inline-flex;
+            background: #e5e7eb;
+            border-radius: 12px;
+            padding: 4px;
+            gap: 4px;
+            margin-bottom: 8px;
+        }
+
+        .mode-tab {
+            background: transparent;
+            color: #64748b;
+            padding: 9px 22px;
+            border-radius: 9px;
+            font-size: 15px;
+            box-shadow: none;
+        }
+
+        .mode-tab:hover {
+            transform: none;
+            box-shadow: none;
+            color: #1f2937;
+        }
+
+        .mode-tab:active {
+            transform: scale(0.96);
+            box-shadow: none;
+        }
+
+        .mode-tab.active-focus {
+            background: #2563eb;
+            color: white;
+        }
+
+        .mode-tab.active-break {
+            background: #16a34a;
+            color: white;
+        }
+
+        /* 倒數中：切換按鈕鎖定 */
+
+        .mode-tab.locked {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .mode-tab.locked:hover {
+            color: #64748b;
+        }
+
+        .mode-tab.active-focus.locked:hover,
+        .mode-tab.active-break.locked:hover {
+            color: white;
+        }
+
+        /* 切換提示文字 */
+
+        .switch-hint {
+            min-height: 20px;
+            margin-bottom: 14px;
+            font-size: 13px;
+            font-weight: bold;
+            color: #16a34a;
+        }
+
+        .switch-hint.paused {
+            color: #2563eb;
+        }
+
+        .switch-hint.running {
+            color: #d97706;
+        }
+
+        .switch-hint.flash {
+            animation: hint-flash 0.5s;
+        }
+
+        @keyframes hint-flash {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
+        }
+
+        .timer {
+            font-size: 78px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            color: #1f2937;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* =========================
+           按鈕
+        ========================= */
+
+        .buttons {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        button {
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+
+            transition:
+                transform 0.12s,
+                background-color 0.2s,
+                box-shadow 0.12s;
+
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.18);
+        }
+
+        button:active {
+            transform: translateY(2px) scale(0.96);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+        }
+
+        .start {
+            background: #2563eb;
+            color: white;
+        }
+
+        .start:hover {
+            background: #1d4ed8;
+        }
+
+        .start:active {
+            background: #1e40af;
+        }
+
+        .pause {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .pause:hover {
+            background: #d97706;
+        }
+
+        .pause:active {
+            background: #b45309;
+        }
+
+        .reset {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .reset:hover {
+            background: #d1d5db;
+        }
+
+        .reset:active {
+            background: #9ca3af;
+        }
+
+        /* =========================
+           訊息
+        ========================= */
+
+        .message {
+            min-height: 24px;
+            margin-top: 20px;
+            color: #16a34a;
+            font-weight: bold;
+        }
+
+        /* =========================
+           結束休息
+        ========================= */
+
+        .skip-break-area {
+            margin-top: 15px;
+        }
+
+        .skip-break {
+            display: none;
+            width: 100%;
+            max-width: 290px;
+            background: #16a34a;
+            color: white;
+        }
+
+        .skip-break:hover {
+            background: #15803d;
+        }
+
+        .skip-break:active {
+            background: #166534;
+        }
+
+        /* =========================
+           自訂時間
+        ========================= */
+
+        .settings-area {
+            margin-top: 28px;
+            padding-top: 25px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .settings-area h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 18px;
+            color: #374151;
+        }
+
+        .setting-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .setting-row label {
+            width: 90px;
+            text-align: right;
+            font-weight: bold;
+            color: #475569;
+        }
+
+        .setting-row input {
+            width: 90px;
+            padding: 9px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 16px;
+            text-align: center;
+            outline: none;
+        }
+
+        .setting-row input:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        }
+
+        .setting-row span {
+            color: #64748b;
+        }
+
+        .apply-button {
+            margin-top: 8px;
+            background: #10b981;
+            color: white;
+        }
+
+        .apply-button:hover {
+            background: #059669;
+        }
+
+        .apply-button:active {
+            background: #047857;
+        }
+
+        .setting-message {
+            min-height: 22px;
+            margin-top: 15px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        /* =========================
+           今日專注統計
+        ========================= */
+
+        .stats-card {
+            padding: 28px;
+            margin-top: 24px;
+        }
+
+        .stats-card h2 {
+            margin-top: 0;
+            margin-bottom: 22px;
+            font-size: 22px;
+            color: #374151;
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .stat-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 22px 15px;
+            text-align: center;
+        }
+
+        .stat-title {
+            color: #64748b;
+            font-size: 15px;
+            margin-bottom: 10px;
+        }
+
+        .stat-value {
+            color: #2563eb;
+            font-size: 30px;
+            font-weight: bold;
+        }
+
+        .stat-unit {
+            color: #64748b;
+            font-size: 15px;
+            font-weight: normal;
+            margin-left: 4px;
+        }
+
+        /* =========================
+           Todo List
+        ========================= */
+
+        .todo-card {
+            padding: 28px;
+            margin-top: 24px;
+        }
+
+        .todo-card h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 22px;
+            color: #374151;
+        }
+
+        .todo-input-area {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .todo-input {
+            flex: 1;
+            min-width: 0;
+            padding: 12px 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 16px;
+            outline: none;
+        }
+
+        .todo-input:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        }
+
+        .add-todo-button {
+            background: #2563eb;
+            color: white;
+            white-space: nowrap;
+        }
+
+        .add-todo-button:hover {
+            background: #1d4ed8;
+        }
+
+        .todo-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .todo-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 6px;
+            border-bottom: 1px solid #e5e7eb;
+            border-radius: 8px;
+        }
+
+        .todo-item:last-child {
+            border-bottom: none;
+        }
+
+        .todo-item:hover {
+            background: #f8fafc;
+        }
+
+        .todo-checkbox {
+            width: 19px;
+            height: 19px;
+            cursor: pointer;
+            flex-shrink: 0;
+            accent-color: #2563eb;
+        }
+
+        .todo-text {
+            flex: 1;
+            text-align: left;
+            color: #374151;
+            font-size: 16px;
+            word-break: break-word;
+        }
+
+        .todo-item.completed .todo-text {
+            color: #9ca3af;
+            text-decoration: line-through;
+        }
+
+        .delete-todo-button {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 8px 12px;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .delete-todo-button:hover {
+            background: #fecaca;
+        }
+
+        .empty-todo-message {
+            padding: 18px 0;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 14px;
+        }
+
+        /* 儲存提示 */
+
+        .storage-info {
+            margin-top: 18px;
+            padding-top: 15px;
+            border-top: 1px solid #e5e7eb;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 13px;
+        }
+
+        /* =========================
+           手機
+        ========================= */
+
+        @media (max-width: 500px) {
+
+            body {
+                padding: 24px 15px;
+            }
+
+            .header h1 {
+                font-size: 32px;
+            }
+
+            .timer-card {
+                padding: 32px 20px;
+            }
+
+            .timer {
+                font-size: 60px;
+            }
+
+            button {
+                padding: 11px 18px;
+            }
+
+            .setting-row label {
+                width: 85px;
+            }
+
+            .stats-card,
+            .todo-card {
+                padding: 22px 18px;
+            }
+
+            .stats-container {
+                gap: 10px;
+            }
+
+            .stat-box {
+                padding: 18px 10px;
+            }
+
+            .stat-value {
+                font-size: 26px;
+            }
+
+            .todo-input-area {
+                flex-direction: column;
+            }
+
+            .add-todo-button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <header class="header">
+        <h1>StudyFlow</h1>
+        <p>學生專注學習助手</p>
+    </header>
+
+
+    <!-- =========================
+         計時器
+    ========================== -->
+
+    <main class="card timer-card">
+
+        <div class="mode-switch">
+
+            <button class="mode-tab" id="focusTab">
+                🎯 專注
+            </button>
+
+            <button class="mode-tab" id="breakTab">
+                ☕ 休息
+            </button>
+
+        </div>
+
+        <div class="switch-hint" id="switchHint"></div>
+
+        <div class="mode" id="mode">
+            🎯 專注模式
+        </div>
+
+        <div class="timer" id="timer">
+            25:00
+        </div>
+
+        <div class="buttons">
+
+            <button class="start" id="startButton">
+                開始
+            </button>
+
+            <button class="pause" id="pauseButton">
+                暫停
+            </button>
+
+            <button class="reset" id="resetButton">
+                重設
+            </button>
+
+        </div>
+
+        <div class="skip-break-area">
+
+            <button
+                class="skip-break"
+                id="skipBreakButton"
+            >
+                結束休息，開始專注
+            </button>
+
+        </div>
+
+        <div class="message" id="message"></div>
+
+
+        <!-- 自訂時間 -->
+
+        <section class="settings-area">
+
+            <h2>⚙️ 自訂專注與休息時間</h2>
+
+            <div class="setting-row">
+
+                <label for="focusInput">
+                    專注時間
+                </label>
+
+                <input
+                    type="number"
+                    id="focusInput"
+                    value="25"
+                    min="1"
+                    step="1"
+                >
+
+                <span>分鐘</span>
+
+            </div>
+
+
+            <div class="setting-row">
+
+                <label for="breakInput">
+                    休息時間
+                </label>
+
+                <input
+                    type="number"
+                    id="breakInput"
+                    value="5"
+                    min="1"
+                    step="1"
+                >
+
+                <span>分鐘</span>
+
+            </div>
+
+
+            <button
+                class="apply-button"
+                id="applyButton"
+            >
+                套用設定
+            </button>
+
+
+            <div
+                class="setting-message"
+                id="settingMessage"
+            ></div>
+
+        </section>
+
+    </main>
+
+
+    <!-- =========================
+         今日專注
+    ========================== -->
+
+    <section class="card stats-card">
+
+        <h2>📊 今日專注</h2>
+
+        <div class="stats-container">
+
+            <div class="stat-box">
+
+                <div class="stat-title">
+                    完成次數
+                </div>
+
+                <div class="stat-value">
+
+                    <span id="focusCount">
+                        0
+                    </span>
+
+                    <span class="stat-unit">
+                        次
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div class="stat-box">
+
+                <div class="stat-title">
+                    累積專注
+                </div>
+
+                <div class="stat-value">
+
+                    <span id="totalFocusMinutes">
+                        0
+                    </span>
+
+                    <span class="stat-unit">
+                        分鐘
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================
+         Todo List
+    ========================== -->
+
+    <section class="card todo-card">
+
+        <h2>📝 今日任務</h2>
+
+        <div class="todo-input-area">
+
+            <input
+                type="text"
+                id="todoInput"
+                class="todo-input"
+                placeholder="輸入新的任務..."
+            >
+
+            <button
+                id="addTodoButton"
+                class="add-todo-button"
+            >
+                新增
+            </button>
+
+        </div>
+
+
+        <ul
+            id="todoList"
+            class="todo-list"
+        ></ul>
+
+
+        <div
+            id="emptyTodoMessage"
+            class="empty-todo-message"
+        >
+            今天還沒有任務，新增第一個任務吧！
+        </div>
+
+
+        <div class="storage-info">
+            ✓ 任務與時間設定會自動儲存；專注統計每天第一次開啟時自動歸零
+        </div>
+
+    </section>
+
+</div>
+
+
+<script>
+
+    /*
+        =====================================
+        HTML 元素
+        =====================================
+    */
+
+    const timerDisplay =
+        document.getElementById("timer");
+
+    const modeDisplay =
+        document.getElementById("mode");
+
+    const messageDisplay =
+        document.getElementById("message");
+
+    const settingMessage =
+        document.getElementById("settingMessage");
+
+    const focusInput =
+        document.getElementById("focusInput");
+
+    const breakInput =
+        document.getElementById("breakInput");
+
+    const startButton =
+        document.getElementById("startButton");
+
+    const pauseButton =
+        document.getElementById("pauseButton");
+
+    const resetButton =
+        document.getElementById("resetButton");
+
+    const applyButton =
+        document.getElementById("applyButton");
+
+    const skipBreakButton =
+        document.getElementById("skipBreakButton");
+
+    const focusTab =
+        document.getElementById("focusTab");
+
+    const breakTab =
+        document.getElementById("breakTab");
+
+    const switchHint =
+        document.getElementById("switchHint");
+
+    const focusCountDisplay =
+        document.getElementById("focusCount");
+
+    const totalFocusMinutesDisplay =
+        document.getElementById(
+            "totalFocusMinutes"
+        );
+
+    const todoInput =
+        document.getElementById("todoInput");
+
+    const addTodoButton =
+        document.getElementById(
+            "addTodoButton"
+        );
+
+    const todoList =
+        document.getElementById("todoList");
+
+    const emptyTodoMessage =
+        document.getElementById(
+            "emptyTodoMessage"
+        );
+
+
+    /*
+        =====================================
+        資料變數
+        =====================================
+    */
+
+    let focusMinutes = 25;
+    let breakMinutes = 5;
+
+    let focusSeconds =
+        focusMinutes * 60;
+
+    let breakSeconds =
+        breakMinutes * 60;
+
+    let isFocusMode = true;
+
+    let timeLeft =
+        focusSeconds;
+
+    let timerInterval =
+        null;
+
+    let focusCount = 0;
+
+    let totalFocusMinutes = 0;
+
+    let currentSessionMinutes =
+        focusMinutes;
+
+    let todos = [];
+
+
+    /*
+        =====================================
+        每日重置（新增）
+        =====================================
+    */
+
+
+    /*
+        取得今天日期（使用本地時間，格式 YYYY-MM-DD）
+        不使用 toISOString()，因為它是 UTC 時間，
+        在台灣會在早上 8 點才換日
+    */
+
+    function getTodayString() {
+
+        const now = new Date();
+
+        return (
+            now.getFullYear()
+            + "-"
+            + String(now.getMonth() + 1).padStart(2, "0")
+            + "-"
+            + String(now.getDate()).padStart(2, "0")
+        );
+    }
+
+
+    /*
+        檢查是否需要每日重置
+        日期不同 → 次數與累積時間歸零
+        （Todo 與時間設定不受影響）
+    */
+
+    function checkDailyReset() {
+
+        const today =
+            getTodayString();
+
+        const savedDate =
+            localStorage.getItem(
+                "studyflowStatsDate"
+            );
+
+        if (savedDate !== today) {
+
+            focusCount = 0;
+
+            totalFocusMinutes = 0;
+
+            /*
+                同時寫入今天的日期
+            */
+
+            saveStats();
+
+            return true;
+        }
+
+        return false;
+    }
+
+
+    /*
+        =====================================
+        Local Storage
+        =====================================
+    */
+
+
+    /*
+        儲存時間設定
+    */
+
+    function saveSettings() {
+
+        localStorage.setItem(
+            "studyflowFocusMinutes",
+            String(focusMinutes)
+        );
+
+        localStorage.setItem(
+            "studyflowBreakMinutes",
+            String(breakMinutes)
+        );
+    }
+
+
+    /*
+        儲存今日統計（同時記錄日期）
+    */
+
+    function saveStats() {
+
+        localStorage.setItem(
+            "studyflowFocusCount",
+            String(focusCount)
+        );
+
+        localStorage.setItem(
+            "studyflowTotalFocusMinutes",
+            String(totalFocusMinutes)
+        );
+
+        localStorage.setItem(
+            "studyflowStatsDate",
+            getTodayString()
+        );
+    }
+
+
+    /*
+        儲存 Todo
+    */
+
+    function saveTodos() {
+
+        localStorage.setItem(
+            "studyflowTodos",
+            JSON.stringify(todos)
+        );
+    }
+
+
+    /*
+        =====================================
+        載入 Local Storage
+        =====================================
+    */
+
+    function loadSavedData() {
+
+        /*
+            -------------------------
+            載入專注時間
+            -------------------------
+        */
+
+        const savedFocusMinutes =
+            parseInt(
+                localStorage.getItem(
+                    "studyflowFocusMinutes"
+                ),
+                10
+            );
+
+
+        if (
+            !Number.isNaN(savedFocusMinutes) &&
+            savedFocusMinutes >= 1
+        ) {
+
+            focusMinutes =
+                savedFocusMinutes;
+        }
+
+
+        /*
+            -------------------------
+            載入休息時間
+            -------------------------
+        */
+
+        const savedBreakMinutes =
+            parseInt(
+                localStorage.getItem(
+                    "studyflowBreakMinutes"
+                ),
+                10
+            );
+
+
+        if (
+            !Number.isNaN(savedBreakMinutes) &&
+            savedBreakMinutes >= 1
+        ) {
+
+            breakMinutes =
+                savedBreakMinutes;
+        }
+
+
+        /*
+            根據讀取到的設定
+            重新計算秒數
+        */
+
+        focusSeconds =
+            focusMinutes * 60;
+
+        breakSeconds =
+            breakMinutes * 60;
+
+
+        /*
+            重新整理後從完整的
+            專注時間開始
+        */
+
+        timeLeft =
+            focusSeconds;
+
+        currentSessionMinutes =
+            focusMinutes;
+
+
+        /*
+            輸入框同步顯示
+            儲存的設定
+        */
+
+        focusInput.value =
+            focusMinutes;
+
+        breakInput.value =
+            breakMinutes;
+
+
+        /*
+            -------------------------
+            載入專注次數
+            -------------------------
+        */
+
+        const savedFocusCount =
+            parseInt(
+                localStorage.getItem(
+                    "studyflowFocusCount"
+                ),
+                10
+            );
+
+
+        if (
+            !Number.isNaN(savedFocusCount) &&
+            savedFocusCount >= 0
+        ) {
+
+            focusCount =
+                savedFocusCount;
+        }
+
+
+        /*
+            -------------------------
+            載入累積時間
+            -------------------------
+        */
+
+        const savedTotalMinutes =
+            parseInt(
+                localStorage.getItem(
+                    "studyflowTotalFocusMinutes"
+                ),
+                10
+            );
+
+
+        if (
+            !Number.isNaN(savedTotalMinutes) &&
+            savedTotalMinutes >= 0
+        ) {
+
+            totalFocusMinutes =
+                savedTotalMinutes;
+        }
+
+
+        /*
+            -------------------------
+            每天第一次開網站時，
+            統計歸零（新增）
+            -------------------------
+        */
+
+        checkDailyReset();
+
+
+        /*
+            -------------------------
+            載入 Todo
+            -------------------------
+        */
+
+        const savedTodos =
+            localStorage.getItem(
+                "studyflowTodos"
+            );
+
+
+        if (savedTodos !== null) {
+
+            try {
+
+                const parsedTodos =
+                    JSON.parse(savedTodos);
+
+
+                /*
+                    確保讀取出來的是陣列
+                */
+
+                if (
+                    Array.isArray(parsedTodos)
+                ) {
+
+                    todos =
+                        parsedTodos;
+                }
+
+            } catch (error) {
+
+                /*
+                    如果資料損壞，
+                    使用空陣列
+                */
+
+                todos = [];
+            }
+
+        }
+
+    }
+
+
+    /*
+        =====================================
+        更新倒數畫面
+        =====================================
+    */
+
+    function updateDisplay() {
+
+        const minutes =
+            Math.floor(timeLeft / 60);
+
+        const seconds =
+            timeLeft % 60;
+
+
+        timerDisplay.textContent =
+            String(minutes).padStart(2, "0")
+            + ":"
+            + String(seconds).padStart(2, "0");
+    }
+
+
+    /*
+        =====================================
+        更新統計
+        =====================================
+    */
+
+    function updateStatsDisplay() {
+
+        focusCountDisplay.textContent =
+            focusCount;
+
+        totalFocusMinutesDisplay.textContent =
+            totalFocusMinutes;
+    }
+
+
+    /*
+        =====================================
+        模式外觀
+        =====================================
+    */
+
+    function showFocusMode() {
+
+        modeDisplay.textContent =
+            "🎯 專注模式";
+
+        modeDisplay.style.background =
+            "#dbeafe";
+
+        modeDisplay.style.color =
+            "#2563eb";
+
+        skipBreakButton.style.display =
+            "none";
+
+        focusTab.classList.add("active-focus");
+        breakTab.classList.remove("active-break");
+    }
+
+
+    function showBreakMode() {
+
+        modeDisplay.textContent =
+            "☕ 休息模式";
+
+        modeDisplay.style.background =
+            "#dcfce7";
+
+        modeDisplay.style.color =
+            "#16a34a";
+
+        skipBreakButton.style.display =
+            "inline-block";
+
+        breakTab.classList.add("active-break");
+        focusTab.classList.remove("active-focus");
+    }
+
+
+    /*
+        =====================================
+        手動切換 專注 / 休息 模式
+        =====================================
+    */
+
+    function switchMode(toFocus) {
+
+        /*
+            已經在該模式，不處理
+        */
+
+        if (isFocusMode === toFocus) {
+
+            return;
+        }
+
+
+        /*
+            倒數進行中不能切換：
+            讓提示文字抖動一下，提醒使用者先暫停
+        */
+
+        if (timerInterval !== null) {
+
+            switchHint.classList.remove("flash");
+
+            void switchHint.offsetWidth;
+
+            switchHint.classList.add("flash");
+
+            return;
+        }
+
+
+        clearInterval(
+            timerInterval
+        );
+
+        timerInterval =
+            null;
+
+
+        isFocusMode =
+            toFocus;
+
+
+        if (toFocus) {
+
+            timeLeft =
+                focusSeconds;
+
+            currentSessionMinutes =
+                focusMinutes;
+
+            showFocusMode();
+
+        } else {
+
+            timeLeft =
+                breakSeconds;
+
+            showBreakMode();
+        }
+
+
+        startButton.textContent =
+            "開始";
+
+        messageDisplay.textContent =
+            "";
+
+        updateDisplay();
+
+        updateModeSwitchState();
+    }
+
+
+    /*
+        =====================================
+        更新「模式切換」的鎖定狀態與提示文字
+
+        倒數中   → 鎖定，提示先暫停
+        已暫停   → 可切換，提示會重設倒數
+        未開始   → 可切換
+        =====================================
+    */
+
+    function updateModeSwitchState() {
+
+        const running =
+            timerInterval !== null;
+
+        const fullSeconds =
+            isFocusMode
+                ? focusSeconds
+                : breakSeconds;
+
+        focusTab.classList.toggle("locked", running);
+
+        breakTab.classList.toggle("locked", running);
+
+        const tabTitle =
+            running
+                ? "倒數中無法切換，請先暫停"
+                : "";
+
+        focusTab.title = tabTitle;
+
+        breakTab.title = tabTitle;
+
+        switchHint.classList.remove("running", "paused");
+
+        if (running) {
+
+            switchHint.classList.add("running");
+
+            switchHint.textContent =
+                "⏳ 倒數中無法切換，請先按「暫停」";
+
+        } else if (timeLeft !== fullSeconds) {
+
+            switchHint.classList.add("paused");
+
+            switchHint.textContent =
+                "⏸ 已暫停，現在可以切換（切換會重設倒數）";
+
+        } else {
+
+            switchHint.textContent =
+                "✓ 現在可以切換模式";
+        }
+    }
+
+
+    /*
+        =====================================
+        開始 / 繼續
+        =====================================
+    */
+
+    function startTimer() {
+
+        if (
+            timerInterval !== null
+        ) {
+
+            return;
+        }
+
+
+        /*
+            完整新一輪開始時
+            記錄本輪專注設定
+        */
+
+        if (
+            isFocusMode &&
+            timeLeft === focusSeconds
+        ) {
+
+            currentSessionMinutes =
+                focusMinutes;
+        }
+
+
+        messageDisplay.textContent =
+            "";
+
+        startButton.textContent =
+            "開始";
+
+
+        timerInterval =
+            setInterval(function () {
+
+                timeLeft--;
+
+
+                if (timeLeft < 0) {
+
+                    timeLeft = 0;
+                }
+
+
+                updateDisplay();
+
+
+                if (timeLeft === 0) {
+
+                    clearInterval(
+                        timerInterval
+                    );
+
+                    timerInterval =
+                        null;
+
+                    timerFinished();
+                }
+
+            }, 1000);
+
+
+        updateModeSwitchState();
+    }
+
+
+    /*
+        =====================================
+        暫停
+        =====================================
+    */
+
+    function pauseTimer() {
+
+        if (
+            timerInterval === null
+        ) {
+
+            return;
+        }
+
+
+        clearInterval(
+            timerInterval
+        );
+
+        timerInterval =
+            null;
+
+
+        startButton.textContent =
+            "繼續";
+
+
+        updateModeSwitchState();
+    }
+
+
+    /*
+        =====================================
+        重設
+        =====================================
+    */
+
+    function resetTimer() {
+
+        clearInterval(
+            timerInterval
+        );
+
+        timerInterval =
+            null;
+
+
+        if (isFocusMode) {
+
+            timeLeft =
+                focusSeconds;
+
+            currentSessionMinutes =
+                focusMinutes;
+
+        } else {
+
+            timeLeft =
+                breakSeconds;
+        }
+
+
+        messageDisplay.textContent =
+            "";
+
+        startButton.textContent =
+            "開始";
+
+
+        updateDisplay();
+
+        updateModeSwitchState();
+    }
+
+
+    /*
+        =====================================
+        計時完成
+        =====================================
+    */
+
+    function timerFinished() {
+
+
+        startButton.textContent =
+            "開始";
+
+
+        /*
+            專注完成
+        */
+
+        if (isFocusMode) {
+
+
+            /*
+                如果頁面一直開著、跨過午夜，
+                完成時先檢查是否已經換日（新增）
+            */
+
+            checkDailyReset();
+
+
+            /*
+                完成次數 +1
+            */
+
+            focusCount++;
+
+
+            /*
+                累積本輪專注時間
+            */
+
+            totalFocusMinutes +=
+                currentSessionMinutes;
+
+
+            /*
+                更新統計畫面
+            */
+
+            updateStatsDisplay();
+
+
+            /*
+                ★ 儲存統計
+            */
+
+            saveStats();
+
+
+            /*
+                切換到休息模式
+            */
+
+            messageDisplay.textContent =
+                "🎉 本次專注完成！準備休息一下吧！";
+
+
+            isFocusMode =
+                false;
+
+
+            timeLeft =
+                breakSeconds;
+
+
+            showBreakMode();
+
+        }
+
+
+        /*
+            休息完成
+        */
+
+        else {
+
+            messageDisplay.textContent =
+                "✅ 休息完成！準備開始下一輪專注。";
+
+
+            isFocusMode =
+                true;
+
+
+            timeLeft =
+                focusSeconds;
+
+
+            currentSessionMinutes =
+                focusMinutes;
+
+
+            showFocusMode();
+        }
+
+
+        updateDisplay();
+
+        updateModeSwitchState();
+    }
+
+
+    /*
+        =====================================
+        提前結束休息
+        =====================================
+    */
+
+    function skipBreak() {
+
+        if (isFocusMode) {
+
+            return;
+        }
+
+
+        clearInterval(
+            timerInterval
+        );
+
+        timerInterval =
+            null;
+
+
+        isFocusMode =
+            true;
+
+
+        timeLeft =
+            focusSeconds;
+
+
+        currentSessionMinutes =
+            focusMinutes;
+
+
+        showFocusMode();
+
+
+        startButton.textContent =
+            "開始";
+
+
+        messageDisplay.textContent =
+            "🎯 已結束休息，可以開始下一輪專注！";
+
+
+        updateModeSwitchState();
+
+
+        updateDisplay();
+    }
+
+
+    /*
+        =====================================
+        套用自訂時間
+        =====================================
+    */
+
+    function applySettings() {
+
+        const newFocusMinutes =
+            parseInt(
+                focusInput.value,
+                10
+            );
+
+
+        const newBreakMinutes =
+            parseInt(
+                breakInput.value,
+                10
+            );
+
+
+        /*
+            驗證輸入
+        */
+
+        if (
+            Number.isNaN(newFocusMinutes) ||
+            Number.isNaN(newBreakMinutes) ||
+            newFocusMinutes < 1 ||
+            newBreakMinutes < 1
+        ) {
+
+            settingMessage.style.color =
+                "#dc2626";
+
+            settingMessage.textContent =
+                "⚠️ 請輸入至少 1 分鐘的時間。";
+
+            return;
+        }
+
+
+        /*
+            紀錄目前是否正在倒數
+        */
+
+        const isRunning =
+            timerInterval !== null;
+
+
+        /*
+            更新設定
+        */
+
+        focusMinutes =
+            newFocusMinutes;
+
+        breakMinutes =
+            newBreakMinutes;
+
+
+        focusSeconds =
+            focusMinutes * 60;
+
+        breakSeconds =
+            breakMinutes * 60;
+
+
+        /*
+            ★ 設定立即儲存
+        */
+
+        saveSettings();
+
+
+        /*
+            沒有正在倒數
+            → 立即更新目前時間
+        */
+
+        if (!isRunning) {
+
+            if (isFocusMode) {
+
+                timeLeft =
+                    focusSeconds;
+
+                currentSessionMinutes =
+                    focusMinutes;
+
+            } else {
+
+                timeLeft =
+                    breakSeconds;
+            }
+
+
+            updateDisplay();
+
+            updateModeSwitchState();
+
+
+            startButton.textContent =
+                "開始";
+
+
+            settingMessage.style.color =
+                "#059669";
+
+
+            settingMessage.textContent =
+                "✓ 已更新並儲存：專注 "
+                + focusMinutes
+                + " 分鐘 / 休息 "
+                + breakMinutes
+                + " 分鐘";
+        }
+
+
+        /*
+            正在倒數
+            → 不干擾目前倒數
+        */
+
+        else {
+
+            settingMessage.style.color =
+                "#059669";
+
+
+            settingMessage.textContent =
+                "✓ 新設定已儲存，將於下一輪生效";
+        }
+    }
+
+
+    /*
+        =====================================
+        Todo List
+        =====================================
+    */
+
+
+    /*
+        將 todos 陣列
+        顯示到畫面
+    */
+
+    function renderTodos() {
+
+        /*
+            先清空畫面
+        */
+
+        todoList.innerHTML =
+            "";
+
+
+        /*
+            重新建立每個 Todo
+        */
+
+        todos.forEach(function (todo) {
+
+
+            const todoItem =
+                document.createElement(
+                    "li"
+                );
+
+
+            todoItem.className =
+                "todo-item";
+
+
+            /*
+                已完成任務
+            */
+
+            if (todo.completed) {
+
+                todoItem.classList.add(
+                    "completed"
+                );
+            }
+
+
+            /*
+                Checkbox
+            */
+
+            const checkbox =
+                document.createElement(
+                    "input"
+                );
+
+
+            checkbox.type =
+                "checkbox";
+
+
+            checkbox.className =
+                "todo-checkbox";
+
+
+            checkbox.checked =
+                todo.completed;
+
+
+            /*
+                任務文字
+            */
+
+            const text =
+                document.createElement(
+                    "span"
+                );
+
+
+            text.className =
+                "todo-text";
+
+
+            text.textContent =
+                todo.text;
+
+
+            /*
+                刪除按鈕
+            */
+
+            const deleteButton =
+                document.createElement(
+                    "button"
+                );
+
+
+            deleteButton.className =
+                "delete-todo-button";
+
+
+            deleteButton.textContent =
+                "刪除";
+
+
+            /*
+                Checkbox 改變
+            */
+
+            checkbox.addEventListener(
+                "change",
+
+                function () {
+
+
+                    todo.completed =
+                        checkbox.checked;
+
+
+                    /*
+                        ★ 儲存完成狀態
+                    */
+
+                    saveTodos();
+
+
+                    /*
+                        重新顯示
+                    */
+
+                    renderTodos();
+                }
+            );
+
+
+            /*
+                刪除
+            */
+
+            deleteButton.addEventListener(
+                "click",
+
+                function () {
+
+
+                    /*
+                        根據 id 刪除資料
+                    */
+
+                    todos =
+                        todos.filter(
+                            function (item) {
+
+                                return (
+                                    item.id !==
+                                    todo.id
+                                );
+                            }
+                        );
+
+
+                    /*
+                        ★ 儲存刪除後資料
+                    */
+
+                    saveTodos();
+
+
+                    /*
+                        重新顯示
+                    */
+
+                    renderTodos();
+                }
+            );
+
+
+            todoItem.appendChild(
+                checkbox
+            );
+
+
+            todoItem.appendChild(
+                text
+            );
+
+
+            todoItem.appendChild(
+                deleteButton
+            );
+
+
+            todoList.appendChild(
+                todoItem
+            );
+
+        });
+
+
+        updateEmptyTodoMessage();
+    }
+
+
+    /*
+        =====================================
+        新增 Todo
+        =====================================
+    */
+
+    function addTodo() {
+
+        const taskText =
+            todoInput.value.trim();
+
+
+        if (taskText === "") {
+
+            todoInput.focus();
+
+            return;
+        }
+
+
+        /*
+            Todo 使用資料物件儲存
+
+            id
+            text
+            completed
+        */
+
+        const newTodo = {
+
+            id:
+                Date.now(),
+
+            text:
+                taskText,
+
+            completed:
+                false
+        };
+
+
+        /*
+            放進 todos 陣列
+        */
+
+        todos.push(
+            newTodo
+        );
+
+
+        /*
+            ★ 新增後立刻存入
+            Local Storage
+        */
+
+        saveTodos();
+
+
+        /*
+            更新畫面
+        */
+
+        renderTodos();
+
+
+        /*
+            清除輸入
+        */
+
+        todoInput.value =
+            "";
+
+
+        todoInput.focus();
+    }
+
+
+    /*
+        =====================================
+        Todo 空白提示
+        =====================================
+    */
+
+    function updateEmptyTodoMessage() {
+
+        if (
+            todos.length === 0
+        ) {
+
+            emptyTodoMessage.style.display =
+                "block";
+
+        } else {
+
+            emptyTodoMessage.style.display =
+                "none";
+        }
+    }
+
+
+    /*
+        =====================================
+        事件
+        =====================================
+    */
+
+    startButton.addEventListener(
+        "click",
+        startTimer
+    );
+
+
+    pauseButton.addEventListener(
+        "click",
+        pauseTimer
+    );
+
+
+    resetButton.addEventListener(
+        "click",
+        resetTimer
+    );
+
+
+    applyButton.addEventListener(
+        "click",
+        applySettings
+    );
+
+
+    skipBreakButton.addEventListener(
+        "click",
+        skipBreak
+    );
+
+
+    focusTab.addEventListener(
+        "click",
+        function () {
+
+            switchMode(true);
+        }
+    );
+
+
+    breakTab.addEventListener(
+        "click",
+        function () {
+
+            switchMode(false);
+        }
+    );
+
+
+    addTodoButton.addEventListener(
+        "click",
+        addTodo
+    );
+
+
+    /*
+        Enter 新增 Todo
+    */
+
+    todoInput.addEventListener(
+        "keydown",
+
+        function (event) {
+
+            if (
+                event.key === "Enter"
+            ) {
+
+                addTodo();
+            }
+
+        }
+    );
+
+
+    /*
+        =====================================
+        初始化網站
+        =====================================
+    */
+
+
+    /*
+        第一步：
+
+        先從 Local Storage
+        讀取所有資料
+        （內含每日重置檢查）
+    */
+
+    loadSavedData();
+
+
+    /*
+        第二步：
+
+        顯示專注模式
+    */
+
+    showFocusMode();
+
+
+    /*
+        第三步：
+
+        更新各區塊
+    */
+
+    updateDisplay();
+
+    updateStatsDisplay();
+
+    renderTodos();
+
+    updateModeSwitchState();
+
+</script>
+
+</body>
+
+</html>
